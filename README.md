@@ -1,6 +1,17 @@
 Laravel MongoDB
 ===============
 
+==================================================**Allbound**====================================================
+```
+Transaction support in MongoDB was added in Release version 3.9.3 of jenssegers/laravel-mongodb. But if we try to switch to this release version, it asks for upgrade to Laravel 9. Since, upgrading to Laravel 9 in api-v5 would be some effort, so for now I have forked the jenssegers/laravel-mongodb repo under our allbound organization.
+
+I have cut a branch named stable out of release version 3.8.4 (The last version before laravel 9 was introduced in jenssegers/laravel-mongodb).
+So now, stable branch of allbound/laravel-mongodb is our master branch which will be referred to in our api-v5 project.
+
+This was the PR https://github.com/jenssegers/laravel-mongodb/pull/2465 in Release 3.9.3 of jenssegers/laravel-mongodb which had the changes for adding Transaction support in MongoDB. I have tried to accomodate transaction support related changes only and ignored the Laravel 9 changes(like adding datatypes to functions and function params etc).
+```
+==================================================**Allbound**=====================================================
+
 [![Latest Stable Version](http://img.shields.io/github/release/jenssegers/laravel-mongodb.svg)](https://packagist.org/packages/jenssegers/mongodb)
 [![Total Downloads](http://img.shields.io/packagist/dm/jenssegers/mongodb.svg)](https://packagist.org/packages/jenssegers/mongodb)
 [![Build Status](https://img.shields.io/github/workflow/status/jenssegers/laravel-mongodb/CI)](https://github.com/jenssegers/laravel-mongodb/actions)
