@@ -334,6 +334,8 @@ class Builder extends BaseBuilder
                 $options = array_merge($options, $this->options);
             }
 
+            $options = $this->inheritConnectionOptions($options);
+
             // Execute aggregation
             $results = iterator_to_array($this->collection->aggregate($pipeline, $options));
 
@@ -344,12 +346,11 @@ class Builder extends BaseBuilder
             // Return distinct results directly
             $column = isset($this->columns[0]) ? $this->columns[0] : '_id';
 
+            $options = $this->inheritConnectionOptions();
+
             // Execute distinct
-            if ($wheres) {
-                $result = $this->collection->distinct($column, $wheres);
-            } else {
-                $result = $this->collection->distinct($column);
-            }
+            $result = $this->collection->distinct($column, $wheres ?: [], $options);
+
 
             return new Collection($result);
         } // Normal query
@@ -369,7 +370,7 @@ class Builder extends BaseBuilder
 
             // Apply order, offset, limit and projection
             if ($this->timeout) {
-                $options['maxTimeMS'] = $this->timeout;
+                $options['maxTimeMS'] = $this->timeout * 1000;
             }
             if ($this->orders) {
                 $options['sort'] = $this->orders;
@@ -394,6 +395,8 @@ class Builder extends BaseBuilder
             if (count($this->options)) {
                 $options = array_merge($options, $this->options);
             }
+
+            $options = $this->inheritConnectionOptions($options);
 
             // Execute query and get MongoCursor
             $cursor = $this->collection->find($wheres, $options);
@@ -567,9 +570,9 @@ class Builder extends BaseBuilder
             $values = [$values];
         }
 
-        // Batch insert
-        $result = $this->collection->insertMany($values);
+        $options = $this->inheritConnectionOptions();
 
+        $result = $this->collection->insertMany($values, $options);
         return 1 == (int) $result->isAcknowledged();
     }
 
@@ -578,8 +581,9 @@ class Builder extends BaseBuilder
      */
     public function insertGetId(array $values, $sequence = null)
     {
-        $result = $this->collection->insertOne($values);
+        $options = $this->inheritConnectionOptions();
 
+        $result = $this->collection->insertOne($values, $options);
         if (1 == (int) $result->isAcknowledged()) {
             if ($sequence === null) {
                 $sequence = '_id';
@@ -599,6 +603,8 @@ class Builder extends BaseBuilder
         if (! Str::startsWith(key($values), '$')) {
             $values = ['$set' => $values];
         }
+
+        $options = $this->inheritConnectionOptions($options);
 
         return $this->performUpdate($values, $options);
     }
@@ -620,6 +626,8 @@ class Builder extends BaseBuilder
 
             $query->orWhereNotNull($column);
         });
+
+        $options = $this->inheritConnectionOptions($options);
 
         return $this->performUpdate($query, $options);
     }
@@ -682,8 +690,11 @@ class Builder extends BaseBuilder
         }
 
         $wheres = $this->compileWheres();
-        $result = $this->collection->DeleteMany($wheres);
-        if (1 == (int) $result->isAcknowledged()) {
+        $options = $this->inheritConnectionOptions();
+
+        $result = $this->collection->deleteMany($wheres, $options);
+
+       if (1 == (int) $result->isAcknowledged()) {
             return $result->getDeletedCount();
         }
 
@@ -707,8 +718,8 @@ class Builder extends BaseBuilder
      */
     public function truncate(): bool
     {
-        $result = $this->collection->deleteMany([]);
-
+        $options = $this->inheritConnectionOptions();
+        $result = $this->collection->deleteMany([], $options);
         return 1 === (int) $result->isAcknowledged();
     }
 
@@ -834,6 +845,8 @@ class Builder extends BaseBuilder
         if (! array_key_exists('multiple', $options)) {
             $options['multiple'] = true;
         }
+
+        $options = $this->inheritConnectionOptions($options);
 
         $wheres = $this->compileWheres();
         $result = $this->collection->UpdateMany($wheres, $query, $options);
@@ -1224,6 +1237,18 @@ class Builder extends BaseBuilder
         $this->options = $options;
 
         return $this;
+    }
+
+    /**
+     * Apply the connection's session to options if it's not already specified.
+     */
+    private function inheritConnectionOptions(array $options = []): array
+    {
+        if (! isset($options['session']) && ($session = $this->connection->getSession())) {
+            $options['session'] = $session;
+        }
+
+        return $options;
     }
 
     /**
