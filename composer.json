@@ -18,6 +18,7 @@
         }
     ],
     "license": "MIT",
+    "minimum-stability": "stable",
     "require": {
         "illuminate/support": "^8.0",
         "illuminate/container": "^8.0",
